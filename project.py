@@ -1,58 +1,78 @@
 import tkinter as tk
+from tkinter import Frame, Entry, Button, Label
 
 
+class ToDoApp:
+    def __init__(self, root: tk.Tk) -> None:
+        self.root = root
+        self.root.title("The ToDo list Program")
 
-def save(value):
-    with open("todo.txt", "a") as f:
-        f.write(f"{value}\n")
+        self.input_frame: Frame = Frame(self.root)
+        self.input_frame.pack(pady=5)
 
-def create_widget(parent, widget_type, **options):
-    return widget_type(parent, **options)
+        self.input: Entry = Entry(self.input_frame, font=("Arial", 20))
+        self.input.pack(side=tk.LEFT)
 
-def del_button(parent):
-    button = tk.Button(parent, text="DEL", width=5, height=1)
-    button.pack(side=tk.RIGHT)
-    return button
+        self.add_button: Button = Button(
+            self.input_frame,
+            text="Add to List",
+            width=10,
+            height=2,
+            command=self.add_to_list,
+        )
+        self.add_button.pack(side=tk.LEFT)
 
-try:
-    f = open("todo.txt", "r")
-except:
-    f = open("todo.txt", "w")
+        self.button_frame: Frame = Frame(self.root)
+        self.button_frame.pack()
 
-window = tk.Tk()
+        self.load_items()
 
-input_frame = tk.Frame(window)
-input_frame.pack(pady=5)
+    def save(self, value: str) -> None:
+        with open("todo.txt", "a") as f:
+            f.write(f"{value}\n")
 
-input = tk.Entry(input_frame, font=("Arial", 20))
-input.pack(side=tk.LEFT)
+    def delete_from_file(self, value: str) -> None:
+        with open("todo.txt", "r") as f:
+            lines = f.readlines()
+        with open("todo.txt", "w") as f:
+            for line in lines:
+                if line.strip() != value:
+                    f.write(line)
 
-remind = tk.Button(
-    input_frame,
-    text="Add to List",
-    width=10,
-    height=2,
-    command=lambda: save(input.get()),
-)
-remind.pack(side=tk.LEFT)
+    def add_to_list(self) -> None:
+        value: str = self.input.get()
+        if value.strip():
+            self.save(value)
+            self.input.delete(0, tk.END)
+            self.create_list_item(value)
 
-window.title("The ToDo list Program")
-
-frame = create_widget(window, tk.Frame)
-
-button_frame = tk.Frame(window)
-button_frame.pack()
-frame.pack()
-
-with open("todo.txt", "r") as file:
-    for line in file:
-        item_frame = tk.Frame(button_frame)
+    def create_list_item(self, value: str) -> None:
+        item_frame: Frame = Frame(self.button_frame)
         item_frame.pack(fill=tk.X, pady=2)
 
-        list_label = tk.Label(item_frame, text=line.strip())
+        list_label: Label = Label(item_frame, text=value)
         list_label.pack(side=tk.LEFT)
 
-        button = del_button(item_frame)
+        del_button: Button = Button(
+            item_frame,
+            text="DEL",
+            width=5,
+            height=1,
+            command=lambda: [item_frame.destroy(), self.delete_from_file(value)],
+        )
+        del_button.pack(side=tk.RIGHT)
 
-window.mainloop()
-f.close()
+    def load_items(self) -> None:
+        try:
+            with open("todo.txt", "r") as file:
+                for line in file:
+                    self.create_list_item(line.strip())
+        except FileNotFoundError:
+            with open("todo.txt", "w"):
+                pass
+
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = ToDoApp(root)
+    root.mainloop()
